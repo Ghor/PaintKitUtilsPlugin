@@ -65,10 +65,10 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <ExternalIncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);$(SourceSDKPath)\public\;$(SourceSDKPath)\public\tier0\;$(SourceSDKPath)\public\tier1\;$(SourceSDKPath)\common\;protobuf-2.6.1\src</ExternalIncludePath>
+    <ExternalIncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);$(SourceSDKPath)\public\;$(SourceSDKPath)\public\tier0\;$(SourceSDKPath)\public\tier1\;$(SourceSDKPath)\common\;..\protobuf-2.6.1\src</ExternalIncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-    <ExternalIncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);$(SourceSDKPath)\public\;$(SourceSDKPath)\public\tier0\;$(SourceSDKPath)\public\tier1\;$(SourceSDKPath)\common\;protobuf-2.6.1\src</ExternalIncludePath>
+    <ExternalIncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);$(SourceSDKPath)\public\;$(SourceSDKPath)\public\tier0\;$(SourceSDKPath)\public\tier1\;$(SourceSDKPath)\common\;..\protobuf-2.6.1\src</ExternalIncludePath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
