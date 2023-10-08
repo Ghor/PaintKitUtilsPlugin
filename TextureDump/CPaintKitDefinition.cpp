@@ -10,7 +10,7 @@ namespace {
 }
 
 
-KeyValues* CPaintKitDefinition::GenerateStageDescKeyValues(unsigned int itemDefinitionIndex, int wear) const
+KeyValues* CPaintKitDefinition::GetStageDescKeyValues(unsigned int itemDefinitionIndex, int wear) const
 {
 	auto func = GenerateStageDescKeyValues_Impl.GetFunc();
 	if (func)

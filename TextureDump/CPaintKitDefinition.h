@@ -8,6 +8,6 @@ class KeyValues;
 class CPaintKitDefinition : public CTypedProtoBufScriptObjectDefinition<CMsgPaintKit_Definition, ProtoDefTypes::DEF_TYPE_PAINTKIT_DEFINITION>
 {
 public:
-	KeyValues* GenerateStageDescKeyValues(unsigned int itemDefinitionIndex, int wear) const;
+	KeyValues* GetStageDescKeyValues(unsigned int itemDefinitionIndex, int wear) const;
 };
 

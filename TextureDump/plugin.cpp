@@ -519,7 +519,7 @@ CON_COMMAND(paintkit_generate_kvs, "Generates the KeyValues of a paintkit.")
 	
 	// Msg("%d\n", message->item_definition_index());
 
-	auto kvs = paintKitDef->GenerateStageDescKeyValues(message->item_definition_index(), wear);
+	auto kvs = paintKitDef->GetStageDescKeyValues(message->item_definition_index(), wear);
 	if (kvs)
 	{
 		KeyValuesDumpAsDevMsg(kvs, 1);
