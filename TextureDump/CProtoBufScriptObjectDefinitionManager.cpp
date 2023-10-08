@@ -68,6 +68,7 @@ const CPaintKitItemDefinition* CProtoBufScriptObjectDefinitionManager::FindPaint
     return NULL;
 }
 
+// TODO: Change this from offset to sigscan.
 OffsetFunc<CProtoBufScriptObjectDefinitionManager* (__cdecl*)()> ProtoBufScriptDefinitionManager_Impl("client.dll", 0x03258d0);
 
 CProtoBufScriptObjectDefinitionManager* ProtoBufScriptDefinitionManager()
