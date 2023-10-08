@@ -1,7 +1,8 @@
 #pragma once
 
 #include "strtools.h"
-#include "UtlQueue.h"
+#include "utlqueue.h"
+#include "utlstring.h"
 
 class ITextureCompositor;
 
@@ -15,10 +16,21 @@ public:
 	{
 	public:
 		int paintKitDefIndex;
+		CUtlString paintKitDefName;
 		int itemDefIndex;
+		CUtlString itemDefName;
 		int wear;
 		int team;
 		uint64 seed;
+		int width;
+		int height;
+		CUtlString outputDir;
+		CUtlString outputName;
+
+		const class CPaintKitDefinition* paintKitDef;
+		const class CPaintKitItemDefinition* itemDef;
+
+		CUtlString ToDebugString();
 	};
 
 	void EnqueueRequest(const CompositorRequest& request);

@@ -3,12 +3,12 @@
 #include "materialsystem/itexture.h"
 #include "materialsystem/imaterial.h"
 #include "materialsystem/imaterialvar.h"
-#include "vstdlib/IKeyValuesSystem.h"
 #include "KeyValues.h"
 #include "pixelwriter.h"
 #include "bitmap/tgawriter.h"
 
-#include <array>
+#include "FileUtils.h"
+#include "filesystem.h"
 
 const char* texture_group_names[] = {
 TEXTURE_GROUP_LIGHTMAP,
@@ -41,37 +41,39 @@ TEXTURE_GROUP_RENDER_TARGET_SURFACE,
 TEXTURE_GROUP_MORPH_TARGETS,
 };
 
-template<typename T>
-class SafePtr
-{
-public:
-	SafePtr(T* other)
+namespace {
+	template<typename T>
+	class SafePtr
 	{
-		SafeAssign(&ptr, other);
-	}
+	public:
+		SafePtr(T* other)
+		{
+			SafeAssign(&ptr, other);
+		}
 
-	~SafePtr()
+		~SafePtr()
+		{
+			SafeRelease(&ptr);
+		}
+
+
+		SafePtr& operator=(T* other) { SafeAssign(&ptr, other); return this; }
+		SafePtr& operator=(SafePtr& other); // Don't allow copying, we have ownership.
+		SafePtr& operator=(SafePtr&& other) { std::swap(this, other); return this; } // Move is fine.
+
+		operator T* () const { return ptr; }
+
+		T* operator->() const { return ptr; }
+
+	private:
+		T* ptr;
+	};
+
+	template<typename T, int N>
+	constexpr int StaticSize(T arr[N])
 	{
-		SafeRelease(&ptr);
+		return N;
 	}
-
-
-	SafePtr& operator=(T* other) { SafeAssign(&ptr, other); return this; }
-	SafePtr& operator=(SafePtr& other); // Don't allow copying, we have ownership.
-	SafePtr& operator=(SafePtr&& other) { std::swap(this, other); return this; } // Move is fine.
-
-	operator T* () const { return ptr; }
-
-	T* operator->() const { return ptr; }
-
-private:
-	T* ptr;
-};
-
-template<typename T, int N>
-constexpr int StaticSize(T arr[N])
-{
-	return N;
 }
 
 class TempPixelBuffer
@@ -119,9 +121,7 @@ private:
 	size_t pixel_size;
 };
 
-
-
-bool SaveTextureToDisk(ITexture* texture, const char* path)
+bool SaveTextureToDisk(ITexture* texture, const char* outputFilePath)
 {
 	int width = texture->GetActualWidth();
 	int height = texture->GetActualHeight();
@@ -179,14 +179,17 @@ bool SaveTextureToDisk(ITexture* texture, const char* path)
 	pRenderContext->PopRenderTargetAndViewport();
 	pRenderContext->EndRender();
 
-	bool success = TGAWriter::WriteTGAFile(path, width, height, textureDumpRT->GetImageFormat(), pixels, width * pixels.GetPixelSize());
+	// Ensure necessary directories exist.
+	g_pFullFileSystem->CreateDirHierarchy(GetDirectoryFromPath(outputFilePath));
+
+	bool success = TGAWriter::WriteTGAFile(outputFilePath, width, height, textureDumpRT->GetImageFormat(), pixels, width * pixels.GetPixelSize());
 
 	if (!success) {
-		Warning("Failed to write texture to file \"%s\".\n", path);
+		Warning("Failed to write texture to file \"%s\".\n", outputFilePath);
 		return false;
 	}
 
-	Msg("Successfully wrote texture to file \"%s\".\n", path);
+	Msg("Successfully wrote texture to file \"%s\".\n", outputFilePath);
 	return true;
 }
 

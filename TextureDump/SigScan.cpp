@@ -2,57 +2,42 @@
 
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
-
 #include "SigScan.h"
-
-#include <libloaderapi.h>
-#include <Psapi.h>
-#include <processthreadsapi.h>
 #include "dbg.h"
 
-void* FindModuleBytePattern(const char* moduleName, const char* searchBytes, size_t searchBytesLength)
+const void* FindModuleBytePattern(ModuleHelper* moduleHelper, Pattern* pattern)
 {
-	Msg("Searching for byte pattern...\n");
-	auto moduleHandle = GetModuleHandle(moduleName);
-	if (moduleHandle == 0)
-	{
-		Msg("moduleHandle is NULL. Aborting.\n");
-		return NULL;
-	}
+	// Msg("Searching for byte pattern...\n");
 
-	MODULEINFO moduleInfo;
-	if (!GetModuleInformation(GetCurrentProcess(), moduleHandle, &moduleInfo, sizeof(moduleInfo)))
-	{
-		Msg("GetModuleInformation failed. Aborting.\n");
-		return NULL;
-	}
+	const byte* moduleStart = NULL;
+	int moduleSize = 0;
 
-	const char* moduleStart = (const char*)moduleInfo.lpBaseOfDll;
-	const char* moduleEnd = moduleStart + moduleInfo.SizeOfImage;
+	try {
+		moduleHelper->GetSpan(&moduleStart, &moduleSize);
 
-	const char* readEnd = moduleEnd - searchBytesLength;
+		const byte* moduleEnd = moduleStart + moduleSize;
 
-	int highestMatchCount = 0;
+		int highestMatchCount = 0;
 
-	for (const char* readStartPos = moduleStart; readStartPos < readEnd; ++readStartPos)
-	{
-		bool matched = true;
-		for (int i = 0; i < searchBytesLength; ++i)
+		for (const byte* currentReadPos = moduleStart; currentReadPos < moduleEnd; ++currentReadPos)
 		{
-			if (readStartPos[i] != searchBytes[i])
+			bool matched = true;
+
+			int bytesRead = 0;
+			if (pattern->IsMatch(currentReadPos, moduleSize, &bytesRead))
 			{
-				matched = false;
-				break;
+				// Msg("Found match at 0x%X! bytesRead=%d offset=0x%X\n ", (int)currentReadPos, bytesRead, currentReadPos - moduleStart);
+				return (void*)currentReadPos;
 			}
-			highestMatchCount = Max(highestMatchCount, i);
-		}
-		if (matched)
-		{
-			Msg("Found match at %d!\n", (int)readStartPos);
-			return (void*)readStartPos;
+
+			highestMatchCount = Max(highestMatchCount, bytesRead);
 		}
 	}
+	catch (ModuleHelper::ModuleNotLoadedException e)
+	{
+		Warning("FindModuleBytePattern failed: ", e.what());
+	}
 
-	Msg("Did not find pattern. Longest match: %d. Aborting.\n", highestMatchCount);
+	// Msg("Did not find pattern. Longest match: %d. Aborting.\n", highestMatchCount);
 	return NULL;
 }

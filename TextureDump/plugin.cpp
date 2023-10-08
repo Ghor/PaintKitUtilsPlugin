@@ -34,18 +34,18 @@
 
 #include "TextureUtils.h"
 #include "CompositorQueue.h"
+#include "CProtoBufScriptObjectDefinitionManager.h"
+#include "CPaintKitDefinition.h"
+#include "CPaintKitItemDefinition.h"
 
-//#define SAMPLE_TF2_PLUGIN
-#ifdef SAMPLE_TF2_PLUGIN
-#include "tf/tf_shareddefs.h"
-#endif
+#include <typeinfo>
+
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
 // Interfaces from the engine
 IVEngineServer* engine = NULL; // helper functions (messaging clients, loading content, making entities, running commands, etc)
 IEngineTrace* enginetrace = NULL;
-IGameEventManager* gameeventmanager = NULL; // game events interface
 
 // useful helper func
 #ifndef GAME_DLL
@@ -119,14 +119,8 @@ bool CTextureDumpPlugin::Load(CreateInterfaceFn interfaceFactory, CreateInterfac
 	ConnectTier1Libraries(&interfaceFactory, 1);
 	ConnectTier2Libraries(&interfaceFactory, 1);
 
-	
-
 	engine = (IVEngineServer*)interfaceFactory(INTERFACEVERSION_VENGINESERVER, NULL);
 	enginetrace = (IEngineTrace*)interfaceFactory(INTERFACEVERSION_ENGINETRACE_SERVER, NULL);
-
-	gameeventmanager = (IGameEventManager*)interfaceFactory(INTERFACEVERSION_GAMEEVENTSMANAGER, NULL);
-
-	
 
 	// get the interfaces we want to use
 	if (!(engine && enginetrace && materials))
@@ -173,7 +167,7 @@ void CTextureDumpPlugin::UnPause(void)
 //---------------------------------------------------------------------------------
 const char* CTextureDumpPlugin::GetPluginDescription(void)
 {
-	return "TextureDump Plugin V0, Ghor";
+	return "TextureDump Plugin V0, Jeffrey \"Ghor\" Hunt";
 }
 
 //---------------------------------------------------------------------------------
@@ -370,30 +364,200 @@ CON_COMMAND(texture_dump, "Dumps the contents of the named texture to disk.")
 	}
 }
 
-CON_COMMAND(paintkit_dump, "Dumps the specified paintkit texture to disk.")
+const char* paintkitOutputTextureHelp = "Queues up a paintkit texture to be generated and then dumped to disk. Will not produce results unless you are in a map.\n"
+"\n"
+"Example:\n"
+"> paintkit_output_texture -paintKitDefName \"workshop_simple_spirits\" -itemDefName \"scattergun\" -wear 3 -team 0 -seed 1234567890 -width 2048 -height 2048 -outputDir \"dump\" -outputName \"simple_spirits_scattergun_1_0_123456790\".\n"
+"\n"
+"Parameters:\n"
+" > \"-paintKitDefName\" is the name of the paint kit to use (e.g. \"workshop_simple_spirits\" for Simple Spirits). You can use \"paintKitDefIndex\" instead.\n"
+" > \"-paintKitDefIndex\" is the index of the paint kit to use (e.g. 290 for Simple Spirits). You can use \"paintKitDefName\" instead.\n"
+" > \"-itemDefName\" is the name of the item to use (e.g. \"scattergun\" for the Scattergun). You can use \"itemDefIndex\" instead.\n"
+" > \"-itemDefIndex\" is the index of the item to use (e.g. 200 for the Scattergun). You can use \"itemDefName\" instead.\n"
+" > \"-wear\" is the wear level of the weapon in the range [1,5], with 1 being Factory New and 5 being Battle Scarred. Optional. Defaults to 1.\n"
+" > \"-team\" is the team to use for multi-team paintkits. It should be in the range [0, 1]. Optional. Defaults to 0.\n"
+" > \"-seed\" is the 64-bit seed to use. You *can* use 0, but you probably shouldn't. \n"
+" > \"-width\" is the width of the texture to be generated. Optional. Defaults to 2048, the largest the game will use.\n"
+" > \"-height\" is the height of the texture to be generated. Optional. Defaults to 2048, the largest the game will use.\n"
+" > \"-outputDir\" is the directory to save the generated file to. Optional. Defaults to \"dump\".\n"
+" > \"-outputName\" is the name to use for the generated file, without a file extension. Optional. Defaults to the engine's internal name for the generated texture.\n"
+;
+CON_COMMAND(paintkit_output_texture, paintkitOutputTextureHelp)
 {
-	if (args.ArgC() < 6)
+	CompositorQueue::CompositorRequest request;
+	request.paintKitDefIndex = args.FindArgInt("-paintKitDefIndex", -1);
+	request.paintKitDefName = args.FindArg("-paintKitDefName");
+	request.itemDefIndex = args.FindArgInt("-itemDefIndex", -1);
+	request.itemDefName = args.FindArg("-itemDefName");
+	request.wear = args.FindArgInt("-wear", 1);
+	request.team = args.FindArgInt("-team", 0);
+	const char* seedStr = args.FindArg("-seed");
+	request.seed = seedStr ? atoll(seedStr) : 0;
+	request.width = args.FindArgInt("-width", 2048);
+	request.height = args.FindArgInt("-height", 2048);
+	request.outputDir = args.FindArg("-outputDir");
+	request.outputName = args.FindArg("-outputName");
+
+
+	auto* scriptDefinitionManager = ProtoBufScriptDefinitionManager();
+	if (!scriptDefinitionManager)
 	{
-		Warning("paintkit_dump <paintkit_def_index> <item_def_index> <wear> <seed> <team>\n");
-		if (g_pCompositorQueue)
+		Warning("Script definition manager unavailable.\n");
+		return;
+	}
+
+	if ((request.paintKitDefIndex == -1) && request.paintKitDefName.IsEmpty())
+	{
+		Warning("Must specify either -paintKitDefIndex or -paintKitDefName.\n");
+		return;
+	}
+	else if ((request.paintKitDefIndex != -1) && !request.paintKitDefName.IsEmpty())
+	{
+		Warning("Cannot specify both -paintKitDefIndex and -paintKitDefName.\n");
+		return;
+	}
+	else if (request.paintKitDefIndex != -1)
+	{
+		if (!(request.paintKitDef = ProtoBufScriptDefinitionManager()->FindPaintKitDefinition(request.paintKitDefIndex)))
 		{
-			g_pCompositorQueue->Update();
+			Warning("Can't find paintkit with defindex %d.\n", request.paintKitDefIndex);
+			return;
 		}
+	}
+	else if (!request.paintKitDefName.IsEmpty())
+	{
+		if (!(request.paintKitDef = ProtoBufScriptDefinitionManager()->FindPaintKitDefinition(request.paintKitDefName)))
+		{
+			Warning("Can't find paintkit with name %s.\n", request.paintKitDefName.Get());
+			return;
+		}
+	}
+
+	if ((request.itemDefIndex == -1) && request.itemDefName.IsEmpty())
+	{
+		Warning("Must specify either -itemDefIndex or -itemDefName.\n");
+		return;
+	}
+	else if ((request.itemDefIndex != -1) && !request.itemDefName.IsEmpty())
+	{
+		Warning("Cannot specify both -itemDefIndex and -itemDefName.\n");
+		return;
+	}
+	else if (request.itemDefIndex != -1)
+	{
+		if (!(request.itemDef = ProtoBufScriptDefinitionManager()->FindPaintKitItemDefinition(request.itemDefIndex)))
+		{
+			Warning("Can't find item with defindex %d.\n", request.itemDefIndex);
+			return;
+		}
+	}
+	else if (!request.itemDefName.IsEmpty())
+	{
+		if (!(request.itemDef = ProtoBufScriptDefinitionManager()->FindPaintKitItemDefinition(request.itemDefName)))
+		{
+			Warning("Can't find item with name %s.\n", request.itemDefName.Get());
+			return;
+		}
+	}
+	
+	if ((request.wear < 1) || (request.wear > 5))
+	{
+		Warning("-wear must be in the range [1, 5]. Clamping.\n");
+	}
+
+	if ((request.team < 0) || (request.team > 1))
+	{
+		Warning("-team must be in the range [0, 1]. Clamping.\n");
+	}
+
+	if (seedStr == NULL)
+	{
+		Warning("Must specify a seed.\n");
+		return;
+	}
+
+	if (request.width <= 0)
+	{
+		Warning("width must be positive.\n");
+		return;
+	}
+
+	if (request.height <= 0)
+	{
+		Warning("height must be positive.\n");
+		return;
+	}
+
+	g_pCompositorQueue->EnqueueRequest(request);
+}
+
+CON_COMMAND(paintkit_generate_kvs, "Generates the KeyValues of a paintkit.")
+{
+	const char* paintKitDefName = args.FindArg("-paintKitDefName");
+	const char* itemDefName = args.FindArg("-paintKitItemDefName");
+	int wear = args.FindArgInt("-wear", 1);
+
+	paintKitDefName = paintKitDefName ? paintKitDefName : "";
+	itemDefName = itemDefName ? itemDefName : "";
+
+	const CPaintKitDefinition* paintKitDef = NULL;
+	if (!(paintKitDef = ProtoBufScriptDefinitionManager()->FindPaintKitDefinition(paintKitDefName)))
+	{
+		Warning("Can't find paintkit with name %s.\n", paintKitDefName);
+		return;
+	}
+
+	const CPaintKitItemDefinition* itemDef = NULL;
+	if (!(itemDef = ProtoBufScriptDefinitionManager()->FindPaintKitItemDefinition(itemDefName)))
+	{
+		Warning("Can't find item with name %s.\n", itemDefName);
+		return;
+	}
+
+
+	auto* message = itemDef->GetMessage();
+	
+	// Msg("%d\n", message->item_definition_index());
+
+	auto kvs = paintKitDef->GenerateStageDescKeyValues(message->item_definition_index(), wear);
+	if (kvs)
+	{
+		KeyValuesDumpAsDevMsg(kvs, 1);
+		Msg("Generated kvs.\n");
 	}
 	else
 	{
-		int paintkit_def_index = atoi(args.Arg(1));
-		int item_def_index = atoi(args.Arg(2));
-		int wear = atoi(args.Arg(3));
-		uint64 seed = atoll(args.Arg(4));
-		int team = atoi(args.Arg(5));
+		Msg("Failed to generate kvs.\n");
+	}
 
-		g_pCompositorQueue->EnqueueRequest(CompositorQueue::CompositorRequest{
-			paintkit_def_index,
-			item_def_index,
-			wear,
-			team,
-			seed
-			});
+}
+
+CON_COMMAND(paintkit_list, "Lists all paint kits in the game.")
+{
+	const auto& defMap = ProtoBufScriptDefinitionManager()->GetDefMap<DEF_TYPE_PAINTKIT_DEFINITION>();
+	Msg("defMap.Count()=%d\n", defMap.Count());
+	for (auto i = defMap.FirstInorder(); defMap.IsValidIndex(i); i = defMap.NextInorder(i))
+	{
+		// auto key = defMap.Key(i);
+		auto protoBufScriptObjectDef = defMap.Element(i);
+		auto* msg = protoBufScriptObjectDef->GetMessage();
+
+		auto& header = msg->header();
+		Msg("{ defindex=%d name=\"%s\" }\n", header.defindex(), header.name().c_str());
+	}
+}
+
+CON_COMMAND(paintkit_item_list, "Lists all paintable items in the game.")
+{
+	const auto& defMap = ProtoBufScriptDefinitionManager()->GetDefMap<DEF_TYPE_PAINTKIT_ITEM_DEFINITION>();
+	Msg("defMap.Count()=%d\n", defMap.Count());
+	for (auto i = defMap.FirstInorder(); defMap.IsValidIndex(i); i = defMap.NextInorder(i))
+	{
+		auto key = defMap.Key(i);
+		auto protoBufScriptObjectDef = defMap.Element(i);
+		auto* msg = protoBufScriptObjectDef->GetMessage();
+		
+		auto& header = msg->header();
+		Msg("{ defindex=%d name=\"%s\" item_definition_index=%d }\n", header.defindex(), header.name().c_str(), msg->item_definition_index());
 	}
 }

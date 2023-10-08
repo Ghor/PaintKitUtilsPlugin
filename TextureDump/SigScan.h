@@ -1,26 +1,56 @@
 #pragma once
 
+#include "Pattern.h"
+#include <memory>
+#include <basetypes.h>
+#include "ModuleHelper.h"
 
-
-void* FindModuleBytePattern(const char* moduleName, const char* searchBytes, size_t searchBytesLength);
+const void* FindModuleBytePattern(ModuleHelper* moduleHelper, Pattern* pattern);
 
 template<typename T>
 class SigScannedFunc
 {
 public:
-	template<int N>
-	SigScannedFunc(const char* moduleName, const char(&searchBytes)[N])
+	SigScannedFunc(const char* moduleName, std::unique_ptr<Pattern>&& pattern) :
+		moduleHelper(moduleName)
 	{
-		this->moduleName = moduleName;
-		this->searchBytes = searchBytes;
-		this->searchBytesLength = N;
+		this->pattern = std::move(pattern);
+		this->func = NULL;
 	}
 
 	T GetFunc()
 	{
 		if (!func)
 		{
-			func = (T)FindModuleBytePattern(moduleName, searchBytes, searchBytesLength);
+			func = (T)FindModuleBytePattern(&moduleHelper, pattern.get());
+		}
+		return func;
+	}
+
+	bool IsValid() { return func != 0; }
+
+private:
+	ModuleHelper moduleHelper;
+	T func;
+	std::unique_ptr<Pattern> pattern;
+};
+
+template<typename T>
+class OffsetFunc
+{
+public:
+	OffsetFunc(const char* moduleName, int offset) :
+		moduleHelper(moduleName)
+	{
+		this->offset = offset;
+		this->func = NULL;
+	}
+
+	T GetFunc()
+	{
+		if (!func)
+		{
+			func = (T)moduleHelper.OffsetToPtr(offset);
 		}
 		return func;
 	}
@@ -29,7 +59,6 @@ public:
 
 private:
 	T func;
-	const char* moduleName;
-	const char* searchBytes;
-	int searchBytesLength;
+	ModuleHelper moduleHelper;
+	int offset;
 };

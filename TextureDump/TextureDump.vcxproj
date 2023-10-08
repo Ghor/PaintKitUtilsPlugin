@@ -13,6 +13,13 @@
   <ItemGroup>
     <ClCompile Include="Compositor.cpp" />
     <ClCompile Include="CompositorQueue.cpp" />
+    <ClCompile Include="CPaintKitDefinition.cpp" />
+    <ClCompile Include="CPaintKitItemDefinition.cpp" />
+    <ClCompile Include="CProtoBufScriptObjectDefinitionManager.cpp" />
+    <ClCompile Include="FileUtils.cpp" />
+    <ClCompile Include="IProtoBufScriptObjectFactory.cpp" />
+    <ClCompile Include="ModuleHelper.cpp" />
+    <ClCompile Include="Pattern.cpp" />
     <ClCompile Include="plugin.cpp" />
     <ClCompile Include="SigScan.cpp" />
     <ClCompile Include="TextureUtils.cpp" />
@@ -22,8 +29,15 @@
     <ClInclude Include="Compositor.h" />
     <ClInclude Include="CompositorQueue.h" />
     <ClInclude Include="CPaintKitDefinition.h" />
+    <ClInclude Include="CPaintKitItemDefinition.h" />
+    <ClInclude Include="CProtoBufScriptObjectDefinitionManager.h" />
     <ClInclude Include="CTypedProtoBufScriptObjectDefinition.h" />
+    <ClInclude Include="FileUtils.h" />
     <ClInclude Include="IProtoBufScriptObjectDefinition.h" />
+    <ClInclude Include="IProtoBufScriptObjectFactory.h" />
+    <ClInclude Include="ModuleHelper.h" />
+    <ClInclude Include="Pattern.h" />
+    <ClInclude Include="ProtoDefInfo.h" />
     <ClInclude Include="SigScan.h" />
     <ClInclude Include="TextureUtils.h" />
     <ClInclude Include="tf_proto_def_messages.pb.h" />
@@ -65,16 +79,16 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <ExternalIncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);$(SourceSDKPath)\public\;$(SourceSDKPath)\public\tier0\;$(SourceSDKPath)\public\tier1\;$(SourceSDKPath)\common\;..\protobuf-2.6.1\src</ExternalIncludePath>
+    <ExternalIncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);$(SourceSDKPath)\;$(SourceSDKPath)\public\;$(SourceSDKPath)\public\tier0\;$(SourceSDKPath)\public\tier1\;$(SourceSDKPath)\common\;..\protobuf-2.6.1\src</ExternalIncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-    <ExternalIncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);$(SourceSDKPath)\public\;$(SourceSDKPath)\public\tier0\;$(SourceSDKPath)\public\tier1\;$(SourceSDKPath)\common\;..\protobuf-2.6.1\src</ExternalIncludePath>
+    <ExternalIncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);$(SourceSDKPath)\;$(SourceSDKPath)\public\;$(SourceSDKPath)\public\tier0\;$(SourceSDKPath)\public\tier1\;$(SourceSDKPath)\common\;..\protobuf-2.6.1\src</ExternalIncludePath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions);_CRT_SECURE_NO_WARNINGS</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;CLIENT_DLL;_DEBUG;_CONSOLE;%(PreprocessorDefinitions);_CRT_SECURE_NO_WARNINGS</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
     </ClCompile>
     <Link>
@@ -91,7 +105,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions);_CRT_SECURE_NO_WARNINGS</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;CLIENT_DLL;NDEBUG;_CONSOLE;%(PreprocessorDefinitions);_CRT_SECURE_NO_WARNINGS</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
     </ClCompile>
     <Link>
