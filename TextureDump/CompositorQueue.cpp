@@ -121,6 +121,12 @@ void CompositorQueue::EnqueueRequest(const CompositorRequest& request)
 	operationQueue.Insert(operation);
 }
 
+CompositorQueue* CompositorQueue::Singleton()
+{
+	static CompositorQueue singleton;
+	return &singleton;
+}
+
 CompositorQueue::CompositorOperation::~CompositorOperation()
 {
 	SafeRelease(compositor);

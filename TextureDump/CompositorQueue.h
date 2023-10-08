@@ -35,6 +35,8 @@ public:
 
 	void EnqueueRequest(const CompositorRequest& request);
 
+	static CompositorQueue* Singleton();
+
 private:
 	class CompositorOperation
 	{
