@@ -71,7 +71,7 @@ private:
 class CompoundPattern : public Pattern
 {
 public:
-	CompoundPattern(std::initializer_list<Pattern*> children);
+	CompoundPattern(const std::initializer_list<Pattern*>& children);
 
 	~CompoundPattern();
 

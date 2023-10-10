@@ -23,7 +23,7 @@ bool WildcardPattern::IsMatch(const byte* target, int targetLength, int* matchin
 	return *matchingByteCount == numBytes;
 }
 
-CompoundPattern::CompoundPattern(std::initializer_list<Pattern*> children)
+CompoundPattern::CompoundPattern(const std::initializer_list<Pattern*>& children)
 {
 	this->childrenLength = children.size();
 	this->children = new std::unique_ptr<Pattern>[childrenLength];
