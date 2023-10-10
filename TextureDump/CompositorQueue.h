@@ -4,36 +4,80 @@
 #include "utlqueue.h"
 #include "utlstring.h"
 
-class ITextureCompositor;
+#include <functional>
 
+class ITexture;
+class ITextureCompositor;
+class KeyValues;
+
+/// <summary>
+/// A class which accepts requests to generate composited textures and processes them in order.
+/// </summary>
 class CompositorQueue
 {
 public:
 	~CompositorQueue();
+
+	void CancelAll();
+
+	/// <summary>
+	/// Runs a processing step on the queue.
+	/// </summary>
 	void Update();
 
-	struct CompositorRequest
+	class CompositorRequest;
+
+	struct CompositorResult
 	{
-	public:
-		int paintKitDefIndex;
-		CUtlString paintKitDefName;
-		int itemDefIndex;
-		CUtlString itemDefName;
-		int wear;
-		int team;
-		uint64 seed;
-		int width;
-		int height;
-		CUtlString outputDir;
-		CUtlString outputName;
-
-		const class CPaintKitDefinition* paintKitDef;
-		const class CPaintKitItemDefinition* itemDef;
-
-		CUtlString ToDebugString();
+		const CompositorRequest* request;
+		const std::exception* exception;
+		ITexture* resultTexture;
 	};
 
-	void EnqueueRequest(const CompositorRequest& request);
+	/// <summary>
+	/// Represents a request for textures to be generated.
+	/// </summary>
+	class CompositorRequest
+	{
+	public:
+		CompositorRequest();
+		~CompositorRequest();
+		CUtlString ToDebugString();
+
+		void SetStageDesc(const KeyValues* newValue);
+		const KeyValues& GetStageDesc() const;
+
+		// No copy. If any copy operator is implemented, it'll need to account for the stageDesc field since this type has ownership of it.
+		CompositorRequest& operator=(const CompositorRequest& other) = delete;
+
+		// Move is perfectly OK!
+		CompositorRequest& operator=(CompositorRequest&& other) = default;
+
+		typedef bool (*RequestCallback_t)(const CompositorResult& result);
+
+		int GetWidth() const;
+		void SetWidth(int newWidth);
+
+		int GetHeight() const;
+		void SetHeight(int newHeight);
+
+	public:
+		CUtlString name;
+		int team;
+		uint64 seed;
+		CUtlString outputDir;
+		CUtlString outputName;
+		std::function<void(const CompositorResult&)> onComplete;
+
+	private:
+		int width;
+		int height;
+		KeyValues* stageDesc;
+	};
+
+
+
+	void EnqueueRequest(CompositorRequest&& request);
 
 	static CompositorQueue* Singleton();
 
@@ -52,4 +96,3 @@ private:
 
 	CUtlQueue<CompositorOperation*> operationQueue;
 };
-

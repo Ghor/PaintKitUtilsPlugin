@@ -11,7 +11,8 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="Compositor.cpp" />
+    <ClCompile Include="CmdArgOneOf.cpp" />
+    <ClCompile Include="Commands.cpp" />
     <ClCompile Include="CompositorQueue.cpp" />
     <ClCompile Include="CPaintKitDefinition.cpp" />
     <ClCompile Include="CPaintKitItemDefinition.cpp" />
@@ -26,7 +27,7 @@
     <ClCompile Include="tf_proto_def_messages.pb.cc" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Compositor.h" />
+    <ClInclude Include="CmdArgOneOf.h" />
     <ClInclude Include="CompositorQueue.h" />
     <ClInclude Include="CPaintKitDefinition.h" />
     <ClInclude Include="CPaintKitItemDefinition.h" />

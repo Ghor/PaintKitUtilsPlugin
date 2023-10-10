@@ -1,7 +1,7 @@
 #include "CompositorQueue.h"
 #include "materialsystem/itexturecompositor.h"
-#include "Compositor.h"
-#include "TextureUtils.h"
+#include "materialsystem/imaterialsystem.h" 
+#include "bitmap/imageformat.h" // For IMAGE_MAX_DIM
 #include "refcount.h"
 #include "UtlString.h"
 #include "fileio.h"
@@ -9,13 +9,24 @@
 #include <exception>
 #include <stdexcept>
 #include "FileUtils.h"
-
+#include "KeyValues.h"
 
 CompositorQueue::~CompositorQueue()
 {
+	CancelAll();
+}
+
+void CompositorQueue::CancelAll()
+{
 	while (!operationQueue.IsEmpty())
 	{
-		delete operationQueue.RemoveAtHead();
+		auto operation = operationQueue.RemoveAtHead();
+		CompositorResult compositorResult;
+		compositorResult.resultTexture = NULL;
+		compositorResult.request = &operation->request;
+		compositorResult.exception = NULL;
+		operation->request.onComplete(compositorResult);
+		delete operation;
 	}
 }
 
@@ -34,22 +45,26 @@ void CompositorQueue::Update()
 			// The operation currently has no compositor, so let's get it started.
 			CompositorQueue::CompositorRequest& request = currentOperation->request;
 
+			const auto compositeFlags = TextureCompositeCreateFlags_t::TEX_COMPOSITE_CREATE_FLAGS_NO_COMPRESSION;
 
-			currentOperation->SetTextureCompositor(CreateTextureCompositor(
-				request.paintKitDef,
-				request.itemDef,
-				request.wear,
-				request.team,
-				request.seed,
-				TextureCompositeCreateFlags_t::TEX_COMPOSITE_CREATE_FLAGS_NO_COMPRESSION,
-				request.width,
-				request.height
-			));
+			currentOperation->SetTextureCompositor(
+				materials->NewTextureCompositor(request.GetWidth(), request.GetHeight(), request.name.Get(), request.team, request.seed, const_cast<KeyValues*>(&request.GetStageDesc()), compositeFlags)
+			);
 
 			// If we failed to get a new compositor, bail on this operation.
 			if (currentOperation->GetTextureCompositor() == NULL)
 			{
-				throw std::runtime_error("Failed to create texture compositor.");
+				CUtlString str;
+				str.Format("IMaterialSystem::NewTextureCompositor(%d, %d, %s, %d, %ull, 0x%X, %d) failed!",
+					request.GetWidth(),
+					request.GetHeight(),
+					request.name.Get(),
+					request.team,
+					request.seed, 
+					(int)&request.GetStageDesc(),
+					compositeFlags
+				);
+				throw std::runtime_error(str);
 			}
 
 			// If all went well, schedule the compositor to resolve.
@@ -80,44 +95,41 @@ void CompositorQueue::Update()
 		case ECompositeResolveStatus::ECRS_Complete:
 		{
 			ITexture* resultTexture = currentOperation->GetTextureCompositor()->GetResultTexture();
-			
-			CUtlString outputDir = currentOperation->request.outputDir;
 
-			// Default to "dump" if no output directory was explicitly specified.
-			if (outputDir.IsEmpty())
-			{
-				outputDir = "dump";
-			}
+			// Call the request's onComplete to give the submitter the results of the operation.
+			CompositorResult result;
+			result.exception = NULL;
+			result.request = &currentOperation->request;
+			result.resultTexture = resultTexture;
+			currentOperation->request.onComplete(result);
 
-			CUtlString fileName = currentOperation->request.outputName;
-
-			// Default to the engine's name for the texture if the request doesn't contain a name override.
-			if (fileName.IsEmpty())
-			{
-				fileName = GetFileNameFromPath(resultTexture->GetName());
-			}
-
-			CUtlString outputPath = currentOperation->request.outputDir + "/" + fileName + ".tga";
-
-			SaveTextureToDisk(resultTexture, outputPath);
-
-			delete operationQueue.RemoveAtHead();
+			// Release the generated texture. If the caller wants to keep it, they'll need to add their own refs.
 			resultTexture->Release();
+
+			// Pop this operation off the queue.
+			delete operationQueue.RemoveAtHead();
 		} break;
 		}
 	}
 	catch (std::exception e)
 	{
+		// Call the request's onComplete to let the submitter know that the operation failed.
+		CompositorResult result;
+		result.exception = &e;
+		result.request = &currentOperation->request;
+		result.resultTexture = currentOperation->GetTextureCompositor()->GetResultTexture();
+		currentOperation->request.onComplete(result);
+
+		// Pop this operation off the queue.
 		Warning("Encountered error in compositor operation for request %s, discarding. Error: %s\n", currentOperation->request.ToDebugString().Get(), e.what());
 		delete operationQueue.RemoveAtHead();
 	}
-
 }
 
-void CompositorQueue::EnqueueRequest(const CompositorRequest& request)
+void CompositorQueue::EnqueueRequest(CompositorRequest&& request)
 {
 	CompositorOperation* operation = new CompositorOperation();
-	operation->request = request;
+	operation->request = std::move(request);
 	operationQueue.Insert(operation);
 }
 
@@ -137,8 +149,29 @@ void CompositorQueue::CompositorOperation::SetTextureCompositor(ITextureComposit
 	SafeAssign(&compositor, newCompositor);
 }
 
+CompositorQueue::CompositorRequest::CompositorRequest() :
+	name(""),
+	team(0),
+	seed(0),
+	width(IMAGE_MAX_DIM),
+	height(IMAGE_MAX_DIM),
+	outputDir(""),
+	outputName(""),
+	onComplete(NULL)
+{
+	stageDesc = new KeyValues("DUMMY");
+}
+
+CompositorQueue::CompositorRequest::~CompositorRequest() {
+	if (stageDesc)
+	{
+		stageDesc->deleteThis();
+	}
+}
+
 CUtlString CompositorQueue::CompositorRequest::ToDebugString()
 {
+	/*
 	CUtlString paintKitIdentifier;
 	if (paintKitDefIndex > 0)
 	{
@@ -163,4 +196,59 @@ CUtlString CompositorQueue::CompositorRequest::ToDebugString()
 	CUtlString str;
 	str.Format("{ %s %s wear=%d team=%d seed=%lld width=%d height=%d }", paintKitIdentifier.Get(), itemIdentifier.Get(), wear, team, seed, width, height);
 	return str;
+	*/
+	return "{ NOT_IMPLEMENTED }";
+}
+
+void CompositorQueue::CompositorRequest::SetStageDesc(const KeyValues* newValue)
+{
+	*stageDesc = *newValue;
+}
+
+const KeyValues& CompositorQueue::CompositorRequest::GetStageDesc() const {
+	return *stageDesc;
+}
+
+int CompositorQueue::CompositorRequest::GetWidth() const
+{
+	return width;
+}
+
+void CompositorQueue::CompositorRequest::SetWidth(int newWidth)
+{
+	if (newWidth <= 0)
+	{
+		CUtlString msg;
+		msg.Format("width must be positive, was %d", newWidth);
+		throw std::runtime_error(msg);
+	}
+	if (IMAGE_MAX_DIM < newWidth)
+	{
+		CUtlString msg;
+		msg.Format("width must be less than IMAGE_MAX_DIM (%d), was %d", IMAGE_MAX_DIM, newWidth);
+		throw std::runtime_error(msg);
+	}
+	width = newWidth;
+}
+
+int CompositorQueue::CompositorRequest::GetHeight() const
+{
+	return height;
+}
+
+void CompositorQueue::CompositorRequest::SetHeight(int newHeight)
+{
+	if (newHeight <= 0)
+	{
+		CUtlString msg;
+		msg.Format("height must be positive, was %d", newHeight);
+		throw std::runtime_error(msg);
+	}
+	if (IMAGE_MAX_DIM < newHeight)
+	{
+		CUtlString msg;
+		msg.Format("height must be less than IMAGE_MAX_DIM (%d), was %d", IMAGE_MAX_DIM, newHeight);
+		throw std::runtime_error(msg);
+	}
+	height = newHeight;
 }
