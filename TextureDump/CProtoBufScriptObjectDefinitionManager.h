@@ -18,7 +18,8 @@ class IProtoBufScriptObjectFactory;
 class CProtoBufScriptObjectDefinitionManager : public CAutoGameSystemPerFrame
 {
 private:
-	CUtlMap<unsigned short, IProtoBufScriptObjectDefinition*> m_DefMaps[protoDefTypeMax + 1];
+	static const int m_DefMapsCount = protoDefTypeMax + 1;
+	CUtlMap<unsigned short, IProtoBufScriptObjectDefinition*> m_DefMaps[m_DefMapsCount];
 	
 	CUtlMap<unsigned short, IProtoBufScriptObjectFactory*> m_Factories;
 	CUtlMap<unsigned short, void*> m_Unknown2;
@@ -31,12 +32,26 @@ public:
 	}
 
 	template<ProtoDefTypes I>
-	const auto& GetDefMap() const
+	const CUtlMap<unsigned short, CTypedProtoBufScriptObjectDefinition<typename ProtoDefEnumToType<I>::type, I>*>& GetDefMap() const
 	{
 		using MsgType_t = typename ProtoDefEnumToType<I>::type;
 		using DefType_t = CTypedProtoBufScriptObjectDefinition<MsgType_t, I>;
 		using MapType_t = CUtlMap<unsigned short, DefType_t*>;
-		return *(MapType_t*)(&m_DefMaps[I]);
+
+		
+
+		return *(const MapType_t*)(&m_DefMaps[I]);
+	}
+
+	template<typename T>
+	const __declspec(noinline) CUtlMap<unsigned short, T*>& GetDefMap() const
+	{
+		using MsgType_t = typename T::TMsg_t;
+		const int index = ProtoDefTypeToEnum<MsgType_t>::enumVal;
+		static_assert(index >= 0, "index is out of bounds!");
+		static_assert(index < m_DefMapsCount, "index is out of bounds!");
+		const CUtlMap<unsigned short, IProtoBufScriptObjectDefinition*>* map = &m_DefMaps[index];
+		return *(const CUtlMap<unsigned short, T*>*)(map);
 	}
 
 	const CPaintKitDefinition* FindPaintKitDefinition(int defIndex) const;
