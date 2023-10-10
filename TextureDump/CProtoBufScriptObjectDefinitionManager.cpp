@@ -68,8 +68,18 @@ const CPaintKitItemDefinition* CProtoBufScriptObjectDefinitionManager::FindPaint
     return NULL;
 }
 
-// TODO: Change this from offset to sigscan.
-OffsetFunc<CProtoBufScriptObjectDefinitionManager* (__cdecl*)()> ProtoBufScriptDefinitionManager_Impl("client.dll", 0x03258d0);
+
+
+// OffsetFunc<CProtoBufScriptObjectDefinitionManager* (__cdecl*)()> ProtoBufScriptDefinitionManager_Impl("client.dll", 0x03258d0);
+SigScannedFunc<CProtoBufScriptObjectDefinitionManager* (__cdecl*)()> ProtoBufScriptDefinitionManager_Impl(
+    "client.dll",
+    std::make_unique<CompoundPattern>(std::initializer_list<Pattern*>{
+        new BasicPattern("\xA1"),
+        new WildcardPattern(4),
+        new BasicPattern("\x85\xC0\x75\x2A\x68\xB4\x01\x00\x00\xE8"),
+        new WildcardPattern(4)
+    })
+);
 
 CProtoBufScriptObjectDefinitionManager* ProtoBufScriptDefinitionManager()
 {
