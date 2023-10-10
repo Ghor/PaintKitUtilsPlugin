@@ -1,6 +1,6 @@
 #pragma once
 
-#include "strtools.h"
+#include "strtools.h" // Prerequisite for "utlqueue.h"
 #include "utlqueue.h"
 #include "utlstring.h"
 
