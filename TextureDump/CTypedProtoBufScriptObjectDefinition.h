@@ -10,9 +10,12 @@ template<typename TMsg, ProtoDefTypes typeID>
 class CTypedProtoBufScriptObjectDefinition : public IProtoBufScriptObjectDefinition
 {
 public:
-	TMsg* GetMessage() const { return (TMsg*)vfunction9(); }
+	using TMsg_t = TMsg;
 
 public:
-	TMsg m_msg1;
-	TMsg m_msg2;
+	TMsg_t* GetMessage() const { return (TMsg_t*)vfunction9(); }
+
+public:
+	TMsg_t m_msg1;
+	TMsg_t m_msg2;
 };
