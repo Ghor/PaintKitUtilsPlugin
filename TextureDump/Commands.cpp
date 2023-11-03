@@ -7,8 +7,8 @@
 #include "KeyValues.h"
 #include "CPaintKitDefinition.h"
 #include "CPaintKitItemDefinition.h"
-#include "CmdArgOneOf.h"
-#include "FileUtils.h"
+#include "CmdArgOneOf.h" // For concommand args.
+#include "filesystem.h" // For g_pFullFileSystem
 #include <stdexcept>
 
 bool GetPaintKitDefFromName(const char* inputStr, const CPaintKitDefinition** result)
@@ -186,7 +186,7 @@ CON_COMMAND(texture_dump, "Dumps the contents of the named texture to disk.")
 const char* paintkitOutputTextureHelp = "Queues up a paintkit texture to be generated and then dumped to disk. Will not produce results unless you are in a map.\n"
 "\n"
 "Example:\n"
-"> paintkit_output_texture -paintKitDefName \"workshop_simple_spirits\" -itemDefName \"scattergun\" -wear 3 -team 0 -seed 1234567890 -width 2048 -height 2048 -outputDir \"dump\" -outputName \"simple_spirits_scattergun_1_0_123456790\".\n"
+"> paintkit_output_texture -paintKitDefName \"workshop_simple_spirits\" -itemDefName \"scattergun\" -wear 3 -team 0 -seed 1234567890 -width 2048 -height 2048 -outputDir \"dump\" -outputName \"simple_spirits_scattergun_1_0_123456790\"\n"
 "\n"
 "Parameters:\n"
 " > \"-paintKitDefName\" is the name of the paint kit to use (e.g. \"workshop_simple_spirits\" for Simple Spirits). You can use \"paintKitDefIndex\" instead.\n"
@@ -203,6 +203,11 @@ const char* paintkitOutputTextureHelp = "Queues up a paintkit texture to be gene
 ;
 CON_COMMAND(paintkit_output_texture, paintkitOutputTextureHelp)
 {
+	if (args.ArgC() == 0)
+	{
+		Msg(paintkitOutputTextureHelp);
+		return;
+	}
 	try {
 		CompositorQueue::CompositorRequest request;
 		const CPaintKitDefinition* paintKitDef;
@@ -223,7 +228,7 @@ CON_COMMAND(paintkit_output_texture, paintkitOutputTextureHelp)
 			if ((request.team < 0) || (request.team > 1))
 			{
 				Warning("-team must be in the range [0, 1]. Clamping.\n");
-				request.team = clamp(wear, 0, 1);
+				request.team = clamp(request.team, 0, 1);
 			}
 
 			const char* seedStr = args.FindArg("-seed");
@@ -259,7 +264,7 @@ CON_COMMAND(paintkit_output_texture, paintkitOutputTextureHelp)
 					// Default to the engine's name for the texture if a name override wasn't specified.
 					if (outputName.IsEmpty())
 					{
-						outputName.Set(GetFileNameFromPath(result.resultTexture->GetName()));
+						outputName.Set(CUtlString(result.resultTexture->GetName()).UnqualifiedFilename());
 					}
 
 					// Enforce the .tga extension. Makes no sense to allow anything else.
@@ -296,12 +301,29 @@ CON_COMMAND(paintkit_output_texture, paintkitOutputTextureHelp)
 	}
 }
 
-CON_COMMAND(paintkit_generate_kvs, "Generates the KeyValues of a paintkit.")
+const char* paintkitGenerateKvsHelp = "Generates the KeyValues of a paintkit."
+"\n"
+"Example:\n"
+"> paintkit_generate_kvs -paintKitDefName \"workshop_simple_spirits\" -paintKitItemDefName \"flamethrower\" -wear 3 -outputFilePath \"dump/paintkits/workshop_simple_spirits_w3.vdf\"\n"
+"\n"
+"Parameters:\n"
+" > \"-paintKitDefName\" is the name of the paint kit to use (e.g. \"workshop_simple_spirits\" for Simple Spirits). You can use \"paintKitDefIndex\" instead.\n"
+" > \"-paintKitDefIndex\" is the index of the paint kit to use (e.g. 290 for Simple Spirits). You can use \"paintKitDefName\" instead.\n"
+" > \"-paintKitItemDefName\" is the name of the item to use (e.g. \"scattergun\" for the Scattergun). You can use \"itemDefIndex\" instead.\n"
+" > \"-paintKitItemDefIndex\" is the index of the item to use (e.g. 200 for the Scattergun). You can use \"itemDefName\" instead.\n"
+" > \"-wear\" is the wear level of the weapon in the range [1,5], with 1 being Factory New and 5 being Battle Scarred. Optional. Defaults to 1.\n"
+" > \"-outputFilePath\" is the path to save the generated file to. Optional. Outputs to console if this option is not provided.\n"
+;
+
+CON_COMMAND(paintkit_generate_kvs, paintkitGenerateKvsHelp)
 {
+	if (args.ArgC() == 0)
+	{
+		Msg(paintkitGenerateKvsHelp);
+		return;
+	}
 	try
 	{
-		int wear = args.FindArgInt("-wear", 1);
-
 		const CPaintKitDefinition* paintKitDef = NULL;
 		const CPaintKitItemDefinition* paintKitItemDef = NULL;
 
@@ -315,14 +337,48 @@ CON_COMMAND(paintkit_generate_kvs, "Generates the KeyValues of a paintkit.")
 			return;
 		}
 
+		int wear = args.FindArgInt("-wear", 1);
+		if ((wear < 1) || (wear > 5))
+		{
+			Warning("-wear must be in the range [1, 5]. Clamping.\n");
+			wear = clamp(wear, 1, 5);
+		}
+
+		CUtlString outputFilePath = args.FindArg("-outputFilePath");
+		if (outputFilePath.IsEmpty())
+		{
+			Msg("-outputFilePath not specified, outputting to console.\n");
+		}
+
 		int item_definition_index = paintKitItemDef->GetMessage()->item_definition_index();
 
-		Msg("Generating KVs for item_definition_index=%d...\n", item_definition_index);
-		auto stageDesc = paintKitDef->GetStageDescKeyValues(item_definition_index, wear);
+		// Msg("Generating KVs for item_definition_index=%d...\n", item_definition_index);
+
+		KeyValues* stageDesc = const_cast<KeyValues*>(paintKitDef->GetStageDescKeyValues(item_definition_index, wear)); // Const casting this because the functions used (KeyValuesDumpAsDevMsg and SaveToFile) didn't mark the args const, but I don't expect they modify state.
+
 		if (stageDesc)
 		{
-			// I'm just gonna assume that this function should've marked its arg as const.
-			KeyValuesDumpAsDevMsg(const_cast<KeyValues*>(stageDesc), 0);
+			if (outputFilePath.IsEmpty())
+			{
+				// I'm just gonna assume that this function should've marked its arg as const.
+				KeyValuesDumpAsDevMsg(stageDesc, 0);
+				Msg("Generated KVs.\n");
+			}
+			else
+			{
+				// Ensure necessary directories exist.
+				g_pFullFileSystem->CreateDirHierarchy(outputFilePath.DirName());
+				if (stageDesc->SaveToFile(g_pFullFileSystem, outputFilePath, NULL))
+				{
+					Msg("Wrote KVs to file \"%s\".\n", outputFilePath.Get());
+				}
+				else
+				{
+					CUtlString msg;
+					msg.Format("Unable to write to file \"%s\".", outputFilePath.Get());
+					throw std::runtime_error(msg);
+				}
+			}
 		}
 		else
 		{
