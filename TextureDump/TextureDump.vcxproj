@@ -91,12 +91,14 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>WIN32;CLIENT_DLL;_DEBUG;_CONSOLE;%(PreprocessorDefinitions);_CRT_SECURE_NO_WARNINGS</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
+      <AdditionalOptions>/D_ITERATOR_DEBUG_LEVEL=0 %(AdditionalOptions)</AdditionalOptions>
+      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalDependencies>$(CoreLibraryDependencies);%(AdditionalDependencies);$(SourceSDKPath)\lib\public\tier0.lib;$(SourceSDKPath)\lib\public\tier1.lib;$(SourceSDKPath)\lib\public\tier2.lib;$(SourceSDKPath)\lib\public\mathlib.lib;$(SourceSDKPath)\lib\public\bitmap.lib;$(SourceSDKPath)\lib\public\vstdlib.lib;libprotobuf.lib</AdditionalDependencies>
-      <IgnoreSpecificDefaultLibraries>libc.lib;libcpmt.lib</IgnoreSpecificDefaultLibraries>
+      <IgnoreSpecificDefaultLibraries>libc.lib;libcpmt.lib;libcmt.lib</IgnoreSpecificDefaultLibraries>
       <ImageHasSafeExceptionHandlers>false</ImageHasSafeExceptionHandlers>
     </Link>
   </ItemDefinitionGroup>
@@ -115,7 +117,7 @@
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalDependencies>$(CoreLibraryDependencies);%(AdditionalDependencies);$(SourceSDKPath)\lib\public\tier0.lib;$(SourceSDKPath)\lib\public\tier1.lib;$(SourceSDKPath)\lib\public\tier2.lib;$(SourceSDKPath)\lib\public\mathlib.lib;$(SourceSDKPath)\lib\public\bitmap.lib;$(SourceSDKPath)\lib\public\vstdlib.lib;libprotobuf.lib</AdditionalDependencies>
-      <IgnoreSpecificDefaultLibraries>libc.lib;libcpmt.lib</IgnoreSpecificDefaultLibraries>
+      <IgnoreSpecificDefaultLibraries>libc.lib;libcpmt.lib;libcmt.lib</IgnoreSpecificDefaultLibraries>
       <ImageHasSafeExceptionHandlers>false</ImageHasSafeExceptionHandlers>
     </Link>
   </ItemDefinitionGroup>
