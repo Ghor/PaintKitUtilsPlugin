@@ -110,7 +110,7 @@ CmdArgOneOf<const CPaintKitItemDefinition*> paintKitItemDefArgOneOf({
 	}
 });
 
-CON_COMMAND(texture_dump, "Dumps the contents of the named texture to disk.")
+CON_COMMAND(pku_texture_dump, "Dumps the contents of the named texture to disk.")
 {
 	if (args.ArgC() < 2)
 	{
@@ -201,7 +201,7 @@ const char* paintkitOutputTextureHelp = "Queues up a paintkit texture to be gene
 " > \"-outputDir\" is the directory to save the generated file to. Optional. Defaults to \"dump\".\n"
 " > \"-outputNameOverride\" is the name to use for the generated file, without a file extension. Optional. Defaults to the engine's internal name for the generated texture.\n"
 ;
-CON_COMMAND(paintkit_output_texture, paintkitOutputTextureHelp)
+CON_COMMAND(pku_paintkit_output_texture, paintkitOutputTextureHelp)
 {
 	if (args.ArgC() == 0)
 	{
@@ -315,7 +315,7 @@ const char* paintkitGenerateKvsHelp = "Generates the KeyValues of a paintkit."
 " > \"-outputFilePath\" is the path to save the generated file to. Optional. Outputs to console if this option is not provided.\n"
 ;
 
-CON_COMMAND(paintkit_generate_kvs, paintkitGenerateKvsHelp)
+CON_COMMAND(pku_paintkit_generate_kvs, paintkitGenerateKvsHelp)
 {
 	if (args.ArgC() == 0)
 	{
@@ -391,7 +391,7 @@ CON_COMMAND(paintkit_generate_kvs, paintkitGenerateKvsHelp)
 	}
 }
 
-CON_COMMAND(paintkit_list, "Lists all paint kits in the game.")
+CON_COMMAND(pku_paintkit_list, "Lists all paint kits in the game.")
 {
 	const auto& defMap = ProtoBufScriptDefinitionManager()->GetDefMap<CPaintKitDefinition>();
 	for (auto i = defMap.FirstInorder(); defMap.IsValidIndex(i); i = defMap.NextInorder(i))
@@ -405,7 +405,7 @@ CON_COMMAND(paintkit_list, "Lists all paint kits in the game.")
 	}
 }
 
-CON_COMMAND(paintkit_item_list, "Lists all paintable items in the game.")
+CON_COMMAND(pku_paintkit_item_list, "Lists all paintable items in the game.")
 {
 	const auto& defMap = ProtoBufScriptDefinitionManager()->GetDefMap<CPaintKitItemDefinition>();
 	for (auto i = defMap.FirstInorder(); defMap.IsValidIndex(i); i = defMap.NextInorder(i))
