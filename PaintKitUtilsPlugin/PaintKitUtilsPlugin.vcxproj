@@ -39,6 +39,7 @@
     <ClInclude Include="ModuleHelper.h" />
     <ClInclude Include="Pattern.h" />
     <ClInclude Include="ProtoDefInfo.h" />
+    <ClInclude Include="resource.h" />
     <ClInclude Include="SigScan.h" />
     <ClInclude Include="TextureUtils.h" />
     <ClInclude Include="tf_proto_def_messages.pb.h" />
@@ -48,6 +49,9 @@
       <DeploymentContent>true</DeploymentContent>
       <FileType>Document</FileType>
     </CopyFileToFolders>
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="PaintKitUtilsPlugin.rc" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>
