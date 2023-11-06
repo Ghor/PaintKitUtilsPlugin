@@ -114,7 +114,7 @@ CON_COMMAND(pku_texture_dump, "Dumps the contents of the named texture to disk."
 {
 	if (args.ArgC() < 2)
 	{
-		Warning("texture_dump <texture_name> [texture_group_name]\n");
+		Warning("pku_texture_dump <texture_name> [texture_group_name]\n");
 	}
 	else
 	{
