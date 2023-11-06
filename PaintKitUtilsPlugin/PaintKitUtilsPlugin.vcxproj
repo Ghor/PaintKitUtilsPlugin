@@ -47,9 +47,9 @@
     <VCProjectVersion>16.0</VCProjectVersion>
     <Keyword>Win32Proj</Keyword>
     <ProjectGuid>{7657a3ed-0f27-49a7-8967-ab3d2755732c}</ProjectGuid>
-    <RootNamespace>TextureDump</RootNamespace>
+    <RootNamespace>PaintKitUtilsPlugin</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
-    <ProjectName>TextureDump</ProjectName>
+    <ProjectName>PaintKitUtilsPlugin</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
