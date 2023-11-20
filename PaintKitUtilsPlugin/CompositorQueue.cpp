@@ -155,8 +155,6 @@ CompositorQueue::CompositorRequest::CompositorRequest() :
 	seed(0),
 	width(IMAGE_MAX_DIM),
 	height(IMAGE_MAX_DIM),
-	outputDir(""),
-	outputName(""),
 	onComplete(NULL)
 {
 	stageDesc = new KeyValues("DUMMY");

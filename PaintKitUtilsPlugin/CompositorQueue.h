@@ -65,8 +65,6 @@ public:
 		CUtlString name;
 		int team;
 		uint64 seed;
-		CUtlString outputDir;
-		CUtlString outputName;
 		std::function<void(const CompositorResult&)> onComplete;
 
 	private:
