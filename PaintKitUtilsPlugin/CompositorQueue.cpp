@@ -55,13 +55,13 @@ void CompositorQueue::Update()
 			if (currentOperation->GetTextureCompositor() == NULL)
 			{
 				CUtlString str;
-				str.Format("IMaterialSystem::NewTextureCompositor(%d, %d, %s, %d, %ull, 0x%X, %d) failed!",
+				str.Format("IMaterialSystem::NewTextureCompositor(w: %d, h: %d, pCompositeName: %s, nTeamNum: %d, randomSeed: %ull, stageDesc: 0x%p, texCompositeCreateFlags: %d) failed!",
 					request.GetWidth(),
 					request.GetHeight(),
 					request.name.Get(),
 					request.team,
 					request.seed, 
-					(int)&request.GetStageDesc(),
+					&request.GetStageDesc(),
 					compositeFlags
 				);
 				throw std::runtime_error(str);
