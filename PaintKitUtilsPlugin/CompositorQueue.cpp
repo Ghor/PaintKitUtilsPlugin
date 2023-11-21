@@ -169,33 +169,9 @@ CompositorQueue::CompositorRequest::~CompositorRequest() {
 
 CUtlString CompositorQueue::CompositorRequest::ToDebugString()
 {
-	/*
-	CUtlString paintKitIdentifier;
-	if (paintKitDefIndex > 0)
-	{
-		paintKitIdentifier.Format("paintKitDefIndex=%d", paintKitDefIndex);
-	}
-	if (!paintKitDefName.IsEmpty())
-	{
-		paintKitIdentifier.Format("paintKitDefName=%s", paintKitDefName.Get());
-	}
-
-	CUtlString itemIdentifier;
-	if (itemDefIndex > 0)
-	{
-		paintKitIdentifier.Format("itemDefIndex=%d", itemDefIndex);
-	}
-	if (!itemDefName.IsEmpty())
-	{
-		itemIdentifier.Format("itemDefName=%s", itemDefName.Get());
-	}
-
-
 	CUtlString str;
-	str.Format("{ %s %s wear=%d team=%d seed=%lld width=%d height=%d }", paintKitIdentifier.Get(), itemIdentifier.Get(), wear, team, seed, width, height);
+	str.Format("{ name=\"%s\" team=%d seed=%lld width=%d height=%d stageDesc=0x%p }", this->name.Get(), this->team, this->seed, this->width, this->height, this->stageDesc);
 	return str;
-	*/
-	return "{ NOT_IMPLEMENTED }";
 }
 
 void CompositorQueue::CompositorRequest::SetStageDesc(const KeyValues* newValue)
