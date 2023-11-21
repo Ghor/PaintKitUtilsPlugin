@@ -41,17 +41,20 @@ public:
 	{
 	public:
 		CompositorRequest();
+		CompositorRequest(CompositorRequest&& other);
 		~CompositorRequest();
-		CUtlString ToDebugString();
-
-		void SetStageDesc(const KeyValues* newValue);
-		const KeyValues& GetStageDesc() const;
 
 		// No copy. If any copy operator is implemented, it'll need to account for the stageDesc field since this type has ownership of it.
 		CompositorRequest& operator=(const CompositorRequest& other) = delete;
 
 		// Move is perfectly OK!
-		CompositorRequest& operator=(CompositorRequest&& other) = default;
+		CompositorRequest& operator=(CompositorRequest&& other);
+		CompositorRequest& operator=(const CompositorRequest&& other) = delete; // But not if other is const, since we need to take resources.
+
+		CUtlString ToDebugString();
+
+		void SetStageDesc(const KeyValues* newValue);
+		const KeyValues& GetStageDesc() const;
 
 		typedef bool (*RequestCallback_t)(const CompositorResult& result);
 

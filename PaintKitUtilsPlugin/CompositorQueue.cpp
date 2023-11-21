@@ -160,6 +160,23 @@ CompositorQueue::CompositorRequest::CompositorRequest() :
 	stageDesc = new KeyValues("DUMMY");
 }
 
+CompositorQueue::CompositorRequest::CompositorRequest(CompositorRequest&& other) : CompositorRequest()
+{
+	*this = std::move(other);
+}
+
+CompositorQueue::CompositorRequest& CompositorQueue::CompositorRequest::operator=(CompositorRequest&& other)
+{
+	std::swap(name, other.name);
+	team = other.team;
+	seed = other.seed;
+	width = other.width;
+	height = other.height;
+	std::swap(stageDesc, other.stageDesc);
+	std::swap(onComplete, other.onComplete);
+	return *this;
+}
+
 CompositorQueue::CompositorRequest::~CompositorRequest() {
 	if (stageDesc)
 	{
