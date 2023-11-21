@@ -117,7 +117,7 @@ void CompositorQueue::Update()
 		CompositorResult result;
 		result.exception = &e;
 		result.request = &currentOperation->request;
-		result.resultTexture = currentOperation->GetTextureCompositor()->GetResultTexture();
+		result.resultTexture = NULL;
 		currentOperation->request.onComplete(result);
 
 		// Pop this operation off the queue.
